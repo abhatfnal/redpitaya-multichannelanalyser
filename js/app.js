@@ -84,6 +84,7 @@
 
         APP.ws.close();
 
+
         $.ajax({
 			type:"get",
 			async: false,
@@ -655,6 +656,7 @@
         var csv_content = "data:text/csv;charset=utf8,";
         var csv_list = [
             ["Real Time (s):", ""+APP.latestSignals.TIMER_STATUS.value[APP.channel]],
+            // ["Real Time (s):", ""],
             ["Channel", "Counts"]
         ];
         for (var i=0, l=APP.latestSignals.HISTOGRAM.value.length; i<l; i++) {
@@ -787,8 +789,23 @@
 }(window.APP = window.APP || {}, jQuery));
 
 
+
+
+
+
+
 // Page onload event handler
 $(document).ready(function() {
+
+    // APP.latestSignals.TIMER_STATUS
+
+    time_interval=60 // time interval in seconds
+
+
+    let nIntervId=null; 
+
+    let nTimeId=null;
+
     // Start application
     APP.startApp();
 
@@ -799,14 +816,18 @@ $(document).ready(function() {
         side: ['top', 'left', 'right', 'bottom']
     });
 
+
     // Stop application the way out
 	$(window).bind('beforeunload', function(e){
 		APP.stopApp(e);
 	});
 
 
+    
+
     $('#start').click(function() {
 
+        clearInterval(nIntervId);
         // Calculate the amount of time in milliseconds to run for
         var timeleft_s = Math.round(
             parseInt($('#hours'  ).val())*3600 +
@@ -827,13 +848,14 @@ $(document).ready(function() {
         // 1 : running
         // 2 : stopped
         switch(APP.status) {
+            
             case 0:
                 APP.resumeMCA(APP.channel, timeleft_s);
                 APP.last_sent_status = 1;
                 break
             case 1:
                 APP.stopMCA(APP.channel);
-                APP.last_sent_status = 2;
+                APP.last_sent_status = 2;  
                 break
             case 2:
                 APP.resumeMCA(APP.channel, timeleft_s);
@@ -842,11 +864,33 @@ $(document).ready(function() {
             default:
                 break
         }
+
+        
+
+        if(!nIntervId){
+            nIntervId= setInterval(resetFunction,1000*time_interval)   
+        }
+
+
         APP.updateButtonStates();
+
+        
+
     });
+
+    clearInterval(nIntervId);
+    function resetFunction(){
+        APP.exportCSV($('#input select option:selected').text());
+        APP.resetHistogram(APP.channel);
+    }
 
     $('#reset').click(function() {
         APP.resetHistogram(APP.channel);
+    });
+
+
+    $('#resetting').click(function() {
+        resetFunction
     });
 
     $('#export').click(function() {
